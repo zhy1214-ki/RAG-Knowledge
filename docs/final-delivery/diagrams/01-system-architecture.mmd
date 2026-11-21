@@ -1,0 +1,21 @@
+flowchart LR
+  B["浏览器：Vue 3 / TypeScript / Element Plus"] -->|"请求静态资源"| N["frontend：Nginx / 127.0.0.1:8080"]
+  N -->|"返回 dist / SPA"| B
+  B -->|"同源 /api 请求"| N
+  N -->|"内部代理 backend:8000"| A
+  subgraph BACK["backend：FastAPI 单进程 / 单 worker"]
+    A["API / JWT / Pydantic / 所有权校验"] --> S["业务服务 / RLock"]
+    S --> O["SQLAlchemy"]
+    S --> P["PyMuPDF / python-docx / UTF-8"]
+    P --> L["LlamaIndex SentenceSplitter"]
+    L --> M["统一模型适配层"]
+    S -->|"问题向量化 / 回答"| M
+    S --> V["MilvusVectors / Milvus Lite 本地服务"]
+    S --> F["上传文件 /data/uploads"]
+    M --> K["MockModels：当前演示"]
+    M -.->|"授权 qwen 模式才调用"| Q["DashScope：Qwen Plus / text-embedding-v4"]
+  end
+  O --> PG["postgres：PostgreSQL 16"]
+  V --> D["app_data：/data/milvus.db 目录式持久化"]
+  F --> D2["app_data：上传文件"]
+  PG --> DP["postgres_data"]

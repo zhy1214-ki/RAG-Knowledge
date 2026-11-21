@@ -1,0 +1,13 @@
+flowchart TD
+  I["本地文档路径与file_type"] --> T{"格式"}
+  T -->|"PDF"| P["PyMuPDF逐页提取文本 / 真实页码从1开始"]
+  T -->|"DOCX"| W["校验解压总量不超过100MiB / 正文段落与表格"]
+  T -->|"TXT或MD"| X["UTF-8-sig读取 / 不推测页码"]
+  P --> C["移除NUL / 合并空格与Tab / strip / 丢弃空白单元"]
+  W --> C
+  X --> C
+  C --> S{"非空且总文本不超过200万字符？"}
+  S -->|"否"| F["PARSE_ERROR"]
+  S -->|"是"| L["SentenceSplitter：chunk_size=384 / overlap=48"]
+  L --> O["逐单元分块 / 保留原source_location"]
+  O --> D["生成DocumentChunk：顺序chunk_index与来源信息"]

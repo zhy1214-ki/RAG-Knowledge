@@ -1,0 +1,22 @@
+# PENDING BACKEND RECREATION AUTHORIZATION. Not applied.
+services:
+  real-backend:
+    environment:
+      MODEL_REQUESTS_PER_MINUTE: '5'
+      R1_APPROVAL_ID: ${R42_APPROVAL_ID:-}
+      R1_APPROVAL_SHA256: ${R42_APPROVAL_SHA256:-}
+    volumes:
+    - type: bind
+      source: ./approval.r42-rate5.json
+      target: /opt/rag/deploy/real-usage/approval.r42-rate5.json
+      read_only: true
+      bind:
+        create_host_path: false
+    command:
+    - python
+    - /opt/rag/scripts/real_usage_runtime.py
+    - serve
+    - --runtime-mode
+    - real
+    - --approval-file
+    - /opt/rag/deploy/real-usage/approval.r42-rate5.json

@@ -1,0 +1,1 @@
+RAG acceptance policy (fictional test data). The return period for the demo library is 17 days. Reference code: RAG-LAB-271. This document contains no personal or business data.

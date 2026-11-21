@@ -1,0 +1,58 @@
+erDiagram
+  users ||--o{ knowledge_bases : owns
+  users ||--o{ chat_sessions : owns
+  knowledge_bases ||--o{ documents : contains
+  knowledge_bases ||--o{ document_chunks : scopes
+  documents ||--o{ document_chunks : splits_into
+  knowledge_bases ||--o{ chat_sessions : grounds
+  chat_sessions ||--o{ chat_messages : contains
+  users {
+    string id PK
+    string username UK
+    string password_hash
+    datetime created_at
+  }
+  knowledge_bases {
+    string id PK
+    string owner_id FK
+    string name
+    text description
+    datetime created_at
+  }
+  documents {
+    string id PK
+    string knowledge_base_id FK
+    string name
+    text file_path
+    string file_type
+    int size
+    string status
+    int progress
+    int chunk_count
+    string error_code
+    datetime created_at
+  }
+  document_chunks {
+    string chunk_id PK
+    string document_id FK
+    string knowledge_base_id FK
+    text text
+    string source_name
+    json source_location
+    int chunk_index
+  }
+  chat_sessions {
+    string id PK
+    string owner_id FK
+    string knowledge_base_id FK
+    string title
+    datetime created_at
+  }
+  chat_messages {
+    string id PK
+    string session_id FK
+    string role
+    text content
+    json citations
+    datetime created_at
+  }

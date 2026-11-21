@@ -1,0 +1,90 @@
+name: rag-knowledge-real
+services:
+  real-postgres:
+    profiles: ["real-usage"]
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: rag_real
+      POSTGRES_DB: rag_personal_real
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    secrets: [postgres_password]
+    volumes: [real_pg_data:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rag_real -d rag_personal_real"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    restart: unless-stopped
+  real-backend:
+    profiles: ["real-usage"]
+    image: rag-knowledge-real-backend:r1
+    stop_grace_period: 180s
+    build:
+      context: ../..
+      dockerfile: deploy/real-usage/backend.Dockerfile
+    environment:
+      RAG_RUNTIME_MODE: real
+      MODEL_BACKEND: qwen
+      ALLOW_PAID_MODELS: "true"
+      QWEN_MODEL: qwen-plus
+      EMBEDDING_MODEL: text-embedding-v4
+      EMBEDDING_DIMENSION: "1024"
+      QWEN_BASE_URL: https://dashscope.aliyuncs.com/compatible-mode/v1
+      VECTOR_BACKEND: milvus
+      STORAGE_DIR: /data/uploads
+      VECTOR_URI: /data/milvus.db
+      AUDIT_DIR: /audit
+      MAX_INPUT_TOKENS: ${R1_MAX_INPUT_TOKENS:-4096}
+      MAX_OUTPUT_TOKENS: ${R1_MAX_OUTPUT_TOKENS:-256}
+      MAX_CALLS_TOTAL: ${R1_MAX_CALLS_TOTAL:-3}
+      MAX_CALLS_PER_DAY: ${R1_MAX_CALLS_PER_DAY:-60}
+      DAILY_BUDGET_CNY: ${R1_DAILY_BUDGET_CNY:-0.01}
+      MODEL_REQUESTS_PER_MINUTE: "6"
+      MODEL_TIMEOUT_SECONDS: "30"
+      MAX_DOCUMENT_CHUNKS: "32"
+      R1_APPROVAL_ID: ${R1_APPROVAL_ID:-}
+      R1_APPROVAL_SHA256: ${R1_APPROVAL_SHA256:-}
+    secrets: [postgres_password, jwt_secret]
+    volumes:
+      - real_app_data:/data
+      - real_audit_data:/audit
+      - type: bind
+        source: ../../backend/.env
+        target: /run/secrets/model.env
+        read_only: true
+        bind:
+          create_host_path: false
+    networks:
+      default:
+        aliases: [backend]
+    depends_on:
+      real-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
+      start_period: 20s
+    restart: unless-stopped
+  real-frontend:
+    profiles: ["real-usage"]
+    image: rag-knowledge-real-frontend:r1
+    build:
+      context: ../../frontend
+    ports: ["127.0.0.1:8081:80"]
+    depends_on:
+      real-backend:
+        condition: service_healthy
+    restart: unless-stopped
+secrets:
+  postgres_password:
+    file: ../../data/real-usage-secrets/postgres_password
+  jwt_secret:
+    file: ../../data/real-usage-secrets/jwt_secret
+volumes:
+  real_pg_data:
+  real_app_data:
+  real_audit_data:
+networks:
+  default: {}

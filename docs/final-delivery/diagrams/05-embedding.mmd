@@ -1,0 +1,13 @@
+flowchart TD
+  I["片段文本列表"] --> M{"MODEL_BACKEND"}
+  M -->|"mock"| H["SHA-256特征哈希 / 1024维 / L2归一化"]
+  M -->|"qwen"| G["已启用付费模式且凭据可用"]
+  G --> B["每批最多10条 / embeddings接口"]
+  B --> R["按index排序 / 校验条数、1024维、有限数值"]
+  H --> V["每个chunk_id对应一个向量"]
+  R --> V
+  V --> MV["Milvus按100行一批插入 / 带document_id与knowledge_base_id"]
+  MV --> DB["关系库同次提交chunks / indexed / chunk_count"]
+  B -->|"异常"| F["EMBEDDING_ERROR / failed / 尝试补偿清理"]
+  R -->|"异常"| F
+  MV -->|"异常"| VF["VECTOR_ERROR / failed / 尝试补偿清理"]

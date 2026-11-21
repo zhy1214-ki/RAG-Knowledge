@@ -1,0 +1,23 @@
+# OFFLINE ONLY. Deployment and clock recovery require separate explicit authorization.
+services:
+  real-backend:
+    image: rag-knowledge-real-backend:r453-epoch-candidate
+    environment:
+      MODEL_REQUESTS_PER_MINUTE: '5'
+      R1_APPROVAL_ID: ${R453_APPROVAL_ID:-}
+      R1_APPROVAL_SHA256: ${R453_APPROVAL_SHA256:-}
+    volumes:
+      - type: bind
+        source: ./approval.r453-epoch.json
+        target: /opt/rag/deploy/real-usage/approval.r453-epoch.json
+        read_only: true
+        bind:
+          create_host_path: false
+    command:
+      - python
+      - /opt/rag/scripts/real_usage_runtime.py
+      - serve
+      - --runtime-mode
+      - real
+      - --approval-file
+      - /opt/rag/deploy/real-usage/approval.r453-epoch.json

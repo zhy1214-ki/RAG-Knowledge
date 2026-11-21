@@ -1,0 +1,17 @@
+flowchart TD
+  U["上传 multipart file"] --> A["JWT认证 / owned_kb"]
+  A --> V["清理显示文件名 / 校验扩展名和名称长度"]
+  V --> W["UUID磁盘文件名 / 每次读取64KiB"]
+  W --> C{"非空且不超过20MiB？"}
+  C -->|"否"| X["删除本次临时文件 / rollback / 安全错误"]
+  C -->|"是"| DB["提交Document：uploaded / progress=0"]
+  DB --> T["注册BackgroundTasks"]
+  T --> R["HTTP202返回文档元数据"]
+  T --> BG["响应后后台process_document"]
+  BG --> L["RLock / 状态仍为uploaded"]
+  L --> P["processing=10 / 解析分块"]
+  P --> E["progress=40 / Embedding与向量写入"]
+  E --> OK["提交chunks与indexed=100"]
+  P -->|"失败"| FAIL["回滚 / 尝试清向量 / failed与error_code"]
+  E -->|"失败"| FAIL
+  R --> POLL["前端每1500ms按需GET列表 / 不重新上传"]

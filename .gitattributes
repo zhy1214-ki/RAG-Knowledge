@@ -1,0 +1,8 @@
+# Preserve reviewed bytes; recognize existing Windows line endings.
+* whitespace=cr-at-eol
+# Reviewed synthetic binary fixtures.
+*.pdf binary
+*.docx binary
+# User-approved legacy formatting exceptions, limited to these two paths.
+backend/app/factory.py whitespace=cr-at-eol,-blank-at-eof
+docs/final-delivery/DEFENSE_MATERIALS.md whitespace=cr-at-eol,-blank-at-eol

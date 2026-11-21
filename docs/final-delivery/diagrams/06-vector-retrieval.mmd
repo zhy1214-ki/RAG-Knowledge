@@ -1,0 +1,11 @@
+flowchart TD
+  A["调用者先校验知识库所有权"] --> D{"该知识库有indexed文档？"}
+  D -->|"否"| Z["返回空证据 / 不调用Embedding"]
+  D -->|"是"| E["问题Embedding一次 / 1024维"]
+  E --> M["Milvus COSINE Top-K / knowledge_base_id过滤"]
+  M --> K["top_k默认5 / 允许1至10"]
+  K --> F["丢弃score低于0.2的候选"]
+  F --> J["按chunk_id查询DocumentChunk JOIN Document"]
+  J --> V["双重核对知识库归属及Document.status=indexed"]
+  V --> R["顺序构造source_id、文本、文档与来源位置"]
+  R --> O["返回真实可用证据 / 不足Top-K不补造"]

@@ -1,0 +1,19 @@
+flowchart TD
+  I["发送问题 / top_k"] --> A["JWT / owned_session / owned_kb / RLock"]
+  A --> R["retrieve知识库证据"]
+  R --> H["读取最近10条会话历史并恢复时间顺序"]
+  H --> S{"存在通过过滤的来源？"}
+  S -->|"无结果"| NO["固定说明证据不足 / 不调用生成模型"]
+  S -->|"有结果"| M{"模型模式"}
+  M -->|"mock"| MO["使用首段证据前600字符构造离线回答"]
+  M -->|"qwen"| P["系统Prompt / 不可信证据JSON / 每条历史截取4000字符"]
+  P --> Q["Qwen Plus返回answer和source_ids"]
+  Q --> C["引用格式与编号校验"]
+  C -->|"失败"| F["MODEL_UNAVAILABLE / 请求事务rollback / 不保存半条对话"]
+  C -->|"通过"| MAP["服务器映射已有Citation"]
+  MO --> MAP
+  NO --> SAVE["同一关系库事务添加user与assistant消息"]
+  MAP --> SAVE
+  SAVE --> TITLE["默认新会话标题取问题前120字符"]
+  TITLE --> COMMIT["commit / 返回assistant消息"]
+  COMMIT --> UI["Vue展示Markdown、来源和历史"]
