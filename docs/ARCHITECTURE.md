@@ -76,3 +76,42 @@ Windows 本机 Python 3.12.16，Milvus Lite 3.2.2 / PyMilvus 3.0.2 已真实验�
 - [Embedding API](https://help.aliyun.com/en/model-studio/text-embedding-synchronous-api)
 
 持久化集合在打开时显式 load_collection；关闭时释放本适配器的本地服务，避免只关闭客户端后文件锁仍占用。该生命周期有独立解释器回归。
+
+## G6：分阶段文档与真实运行扩展
+
+本文件继续作为总体架构入口；Windows下architecture.md与ARCHITECTURE.md属于同一路径，沿用既有名称，不新增仅大小写不同的文件。原六表业务结构仍有效，独立真实运行额外使用三张保护表，不把它们误写成用户业务实体。
+
+```mermaid
+flowchart LR
+  UI["Vue 3 / Element Plus 六页"] --> API["FastAPI：JWT、所有权、响应与错误"]
+  API --> DB[("PostgreSQL：元数据、片段、会话")]
+  API --> FILES[("原始上传文件")]
+  API --> PARSE["PyMuPDF / python-docx / UTF-8"]
+  PARSE --> SPLIT["LlamaIndex SentenceSplitter"]
+  SPLIT --> MODEL["模型统一接口"]
+  MODEL --> MILVUS[("Milvus Lite：1024维 / COSINE")]
+  API --> RET["问题Embedding + 知识库检索"]
+  RET --> MODEL
+  RET --> MILVUS
+  RET --> CHECK["关系库归属 / indexed复核"]
+  CHECK --> DB
+  CHECK --> CONTEXT["不可信证据与有限历史"]
+  CONTEXT --> QWEN["Qwen Plus"]
+  QWEN --> CIT["来源编号校验"]
+  CIT --> DB
+  DB --> API
+  API --> UI
+  EMB["text-embedding-v4"] --- MODEL
+  GUARD["独立real模式：预算、并发、UTC与UNKNOWN保护"] -.-> MODEL
+  GUARD -.-> QWEN
+```
+
+这张图表示组件调用与数据依赖，不是额外的服务部署：Milvus Lite在后端进程环境内使用本地持久化，不是独立集群；Qwen与Embedding是外部付费服务。普通演示可替换为Mock；独立infrastructure模式使用DisabledModels，不能把拒绝模型调用写成真实成功。
+
+[UsageGuard](../backend/app/real_usage/guard.py)的GuardState、ModelCall、Operation分别保存暂停/时间纪元、模型请求/费用和业务操作指纹；PostgreSQL行锁约束预留事务，锁外执行HTTP后再核验usage。六张业务表见[业务模型](../backend/app/models/__init__.py)，三个保护模型定义在guard.py，独立迁移位于[real_usage_migrations](../backend/real_usage_migrations/)。
+
+[GuardedModels](../backend/app/real_usage/models.py)只在独立真实入口启用，限制输入估算与输出、超时及无重试；不能把这些保护泛化为普通Mock应用的全站限流。真实预算是可记录请求的应用上限，不是云账单保证。
+
+8080是原Mock演示布局，8081使用独立前后端、关系卷、向量/上传卷和审计卷；本次不验证现场状态、不操作容器。后台任务、Milvus文件锁和启动恢复均要求单worker。
+
+阅读[开发计划](development-plan.md)、[实际历程](development-history.md)，或从[Stage 3解析](stage3.md)、[Stage 5问答](stage5.md)、[Stage 7安全](stage7.md)按主题进入。图和描述均对应当前源码，不引入其他项目组件；历史阶段名称不代表Git版本。

@@ -9,6 +9,23 @@
 
 默认采用Mock Embedding和Mock回答，不需要模型API Key。Mock通过只证明接口和流程，不代表真实模型效果。
 
+## 开发文档
+
+八个Stage是按实际功能归纳的专题，不代表历史存在同名Git版本。先读[开发计划](docs/development-plan.md)、[系统架构](docs/ARCHITECTURE.md)与[实际开发历程](docs/development-history.md)。
+
+| 阶段 | 文档 |
+|---|---|
+| 1 | [初始化与基础架构](docs/stage1.md) |
+| 2 | [用户认证与知识库](docs/stage2.md) |
+| 3 | [文档上传、解析与切分](docs/stage3.md) |
+| 4 | [Embedding与Milvus检索](docs/stage4.md) |
+| 5 | [Qwen RAG、引用与历史](docs/stage5.md) |
+| 6 | [Vue前端与UI优化](docs/stage6.md) |
+| 7 | [Docker部署、费用与运行安全](docs/stage7.md) |
+| 8 | [真实验收与V1.0发布](docs/stage8.md) |
+
+维护者说明仓库现为Public；首次上传阶段的Private记录属于历史状态。本轮只整理公开文档，未联网核验或改变可见性。以下新增文档尚未提交/推送，不代表GitHub页面已更新；运行秘密、账号与原始审计继续排除。
+
 ## 版本与验收边界
 
 本目录是独立脱敏的V1.0源码发布副本，使用全新本地Git历史；不复制原始提交、标签或归档。详见[发布说明](docs/GITHUB_RELEASE_NOTES.md)。
